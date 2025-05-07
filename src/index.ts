@@ -5,22 +5,37 @@ import dotenv from "dotenv";
 
 import cors from "cors";
 import db from "./db";
-import { batch } from "./db/schema";
-
 dotenv.config();
 const app = express();
 app.use(cors());
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.get("/test", async (req, res) => {
-  try {
-    const d = await db.select().from(batch).all();
-    res.json(d);
-  } catch (error) {
-    console.error("Error fetching data:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+
+// Get batches with optional filter
+app.post("/batches", (req, res) => {
+  const sql = `INSERT INTO batches (id, name, status) VALUES (?, ?, ?)`;
+  const params = ["qwkdjnqxkjqw", "krishna", "nuasjn"];
+  db.run(sql, params, function (err) {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.status(201).json({ id: this.lastID });
+  });
+});
+app.get("/batches", (req, res) => {
+  const { status } = req.query;
+  let sql = `SELECT * FROM batches`;
+  const params = [];
+
+  if (status) {
+    sql += ` WHERE status = ?`;
+    params.push(status);
   }
+
+  db.all(sql, params, (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
 });
 const server = app.listen(9090, "0.0.0.0", () => {
   const addressInfo = server.address();
